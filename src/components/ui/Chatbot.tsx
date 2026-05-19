@@ -48,12 +48,44 @@ export default function Chatbot() {
         throw new Error("Failed to fetch response");
       }
 
-      const data = await response.json();
-      setMessages([...newMessages, { role: 'assistant', text: data.text }]);
+      setIsLoading(false); // Stop generic loading indicator
+      setMessages(prev => [...prev, { role: 'assistant', text: "" }]); // Add empty message for streaming
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) return;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            if (dataStr === '[DONE]') break;
+            
+            try {
+              const data = JSON.parse(dataStr);
+              setMessages(prev => {
+                const updated = [...prev];
+                const lastIdx = updated.length - 1;
+                if (updated[lastIdx].role === 'assistant') {
+                  updated[lastIdx] = { ...updated[lastIdx], text: updated[lastIdx].text + data.text };
+                }
+                return updated;
+              });
+            } catch (e) {
+              console.error("Error parsing stream data", e);
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error(error);
       setMessages([...newMessages, { role: 'assistant', text: "Error: Connection lost. Unable to reach AI core." }]);
-    } finally {
       setIsLoading(false);
     }
   };

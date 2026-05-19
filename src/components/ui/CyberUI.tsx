@@ -29,13 +29,15 @@ export function NeonButton({
   variant = 'blue', 
   className,
   id,
-  onClick
+  onClick,
+  disabled
 }: { 
   children: React.ReactNode; 
   variant?: 'blue' | 'purple' | 'cyan'; 
   className?: string;
   id?: string;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   const variants = {
     blue: "border-blue-500/50 hover:bg-blue-500/10 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]",
@@ -46,12 +48,14 @@ export function NeonButton({
   return (
     <motion.button
       id={id}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
+      whileHover={disabled ? {} : { scale: 1.02 }}
+      whileTap={disabled ? {} : { scale: 0.98 }}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={cn(
         "px-6 py-2 border rounded-full transition-all duration-300 font-medium tracking-wide",
         variants[variant],
+        disabled && "opacity-50 cursor-not-allowed grayscale",
         className
       )}
     >
