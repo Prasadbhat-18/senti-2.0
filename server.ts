@@ -69,7 +69,7 @@ const ai = new GoogleGenAI({
     }
   }
 });
-const MODEL_NAME = "gemini-3-flash-preview";
+const MODEL_NAME = "gemini-2.5-flash";
 
 // --- API Routes ---
 
@@ -336,7 +336,9 @@ app.get("/api/link-history", async (req, res) => {
   }
 });
 
-// --- Vite Middleware ---
+// --- Vite Middleware & Core Launch ---
+export const apiApp = app;
+
 async function setupVite() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -353,8 +355,11 @@ async function setupVite() {
   }
 }
 
-setupVite().then(() => {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+// Only start the server if not running in a Netlify Function / AWS Lambda
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  setupVite().then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
   });
-});
+}
